@@ -87,3 +87,7 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# Special files for this project
+requestdepot.py.yaml
+pymodules
