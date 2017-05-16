@@ -11,6 +11,7 @@ import genutil
 # Import the special modules we'll need
 import json, time
 import twitter
+import RPi.GPIO as GPIO
 
 #------------------------------------------------------------------------------
 # GLOBALS
@@ -100,11 +101,9 @@ def main():
       lastMesssageId = messages[0].id
 
       print("Entering forever loop of checking for new messages and acting on them")
-
+      # Note: some day when the Activity API is out of beta and supported by the twitter module, I'd like to replace
+      #       the following loop with the Activity API
       while True:
-
-         print("Sleeping for %d seconds..." % G_config["sleepCycle"])
-         time.sleep(G_config["sleepCycle"])
 
          print("Checking for new messages.")
          messages = api.GetDirectMessages(since_id=lastMesssageId)
@@ -116,20 +115,33 @@ def main():
                messageText = message.text.strip().lower()
 
                if message.sender.id in G_authorizedSenders:
-                  if messageText == "take photo" or messageText == "take video":
+                  if messageText.startswith("take photo") or messageText.startswith("take video"):
                      snapType = ("video","photo")["photo" in messageText]
-                     returncode, out, err = genutil.execCommand("/usr/local/src/snapandtell/snap_and_tell.py --light %s %s" % (snapType, G_config["snapandtell"]["emailTo"]))
+                     match = re.search(r'^\S+ \S+ (\S+)', messageText)
+                     if match:
+                        emailTo = match.group(1)
+                     else:
+                        emailTo = G_config["snapandtell"]["emailTo"]
+                     returncode, out, err = genutil.execCommand("/usr/local/src/snapandtell/snap_and_tell.py --light %s %s" % (snapType, emailTo))
                      if returncode == 0:
                         api.PostDirectMessage("Received and Completed: %s" % message.text, user_id=message.sender.id, screen_name=None)
                      else:
                         logger.info("%s: %d, %s, %s" % (messageText, returncode, out, err))
                         api.PostDirectMessage("Received and Failed: %s" % message.text, user_id=message.sender.id, screen_name=None)
+                  elif messageText == "light on" or messageText == "light off":
+                     lightSetting = (1,0)[" on" in messageText]
+                     GPIO.setwarnings(False)
+                     GPIO.setmode(GPIO.BOARD)
+                     GPIO.setup(12, GPIO.OUT)
+                     GPIO.output(12,lightSetting)
+                     api.PostDirectMessage("Received and Completed: %s" % message.text, user_id=message.sender.id, screen_name=None)
                   else:
-                     api.PostDirectMessage("Hints: take photo, take video, light on|off", user_id=message.sender.id, screen_name=None)
+                     api.PostDirectMessage("Hints: take photo {<email>}, take video {<email>}, light on|off", user_id=message.sender.id, screen_name=None)
                else:
                   print("Ignoring message from unauthorized sender: %d", message.sender.id)
          else:
-            print("No new messages.")
+            print("No new messages.  Sleeping for %d seconds..." % G_config["sleepCycle"])
+            time.sleep(G_config["sleepCycle"])
 
    except GeneralError as e:
       if genutil.G_options.debug:
