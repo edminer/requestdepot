@@ -1,0 +1,12 @@
+# yaml config file for requestdepot.py
+
+twitterAccount:
+   consumerKey: mykey
+   consumerSecret: mysecret
+   accessToken: my-access-token
+   accessTokenSecret: my-access-secret
+
+sleepCycle: 120.0
+
+snapandtell:
+   emailTo: janedoeiot@gmail.com
