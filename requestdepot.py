@@ -122,7 +122,7 @@ def main():
                         emailTo = match.group(1)
                      else:
                         emailTo = G_config["snapandtell"]["emailTo"]
-                     returncode, out, err = genutil.execCommand("/usr/local/src/snapandtell/snap_and_tell.py --light %s %s" % (snapType, emailTo))
+                     returncode, out, err = genutil.execCommand("/usr/local/src/snapandtell/snap_and_tell.py --light --pushoverTo %s %s %s" % (G_config["snapandtell"]["pushoverTo"], snapType, emailTo))
                      if returncode == 0:
                         api.PostDirectMessage("Received and Completed: %s" % message.text, user_id=message.sender.id, screen_name=None)
                      else:

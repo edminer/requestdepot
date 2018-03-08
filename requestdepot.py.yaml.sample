@@ -10,3 +10,4 @@ sleepCycle: 120.0
 
 snapandtell:
    emailTo: janedoeiot@gmail.com
+   pushoverTo: janedoeiot
